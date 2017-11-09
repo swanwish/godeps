@@ -1,0 +1,10 @@
+[
+    {
+        "path": "github.com/swanwish/go-common",
+        "origin": "git@github.com:swanwish/go-common.git"
+    },
+    {
+        "path": "github.com/urfave/cli",
+        "origin": "https://github.com/urfave/cli"
+    }
+]
