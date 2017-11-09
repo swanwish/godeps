@@ -50,7 +50,7 @@ func runSync(c *cli.Context) error {
 
 func updateDepItem(item *godeps.DepItem) error {
 	logs.Debugf("Update package with origin %s", item.Origin)
-	vendorPath := filepath.Join("vendors", item.Path)
+	vendorPath := filepath.Join("vendor", item.Path)
 	vendorParentPath := filepath.Dir(vendorPath)
 	if !utils.FileExists(vendorParentPath) {
 		err := os.MkdirAll(vendorParentPath, 0755)
