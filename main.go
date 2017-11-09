@@ -18,6 +18,7 @@ func main() {
 	app.Usage = "The tool for manage the dependent packages for go project"
 	app.Version = APP_VERSION
 	app.Commands = []cli.Command{
+		cmd.Init,
 		cmd.Add,
 		cmd.Delete,
 		cmd.Update,
