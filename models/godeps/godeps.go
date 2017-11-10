@@ -40,11 +40,11 @@ func (goDeps *GoDeps) AddItem(path, origin string) error {
 	}
 	for _, item := range goDeps.Deps {
 		if item.Path == path {
-			logs.Errorf("The path %s already exists", path)
+			logs.Warnf("The path %s already exists", path)
 			return common.ErrAlreadyExist
 		}
 		if item.Origin == origin {
-			logs.Errorf("The origin %s already exists", origin)
+			logs.Warnf("The origin %s already exists", origin)
 			return common.ErrAlreadyExist
 		}
 	}

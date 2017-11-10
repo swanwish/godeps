@@ -135,7 +135,7 @@ func GetExternalPackages(wd string, systemPackages []string) ([]string, error) {
 		}
 		return nil
 	})
-	sort.Sort(sort.StringSlice(externalPackages))
+	sort.Strings(externalPackages)
 	return externalPackages, nil
 }
 
