@@ -21,8 +21,8 @@ import (
 var (
 	Init = cli.Command{
 		Name:        "init",
-		Usage:       "Create a godeps.json file in current folder",
-		Description: "This command will create a godeps.json file in current folder",
+		Usage:       "Init godeps.json file according the external packages for local project",
+		Description: "This command will create a godeps.json file according the external packages for local project",
 		Action:      runInit,
 		Flags:       []cli.Flag{},
 	}
