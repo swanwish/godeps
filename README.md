@@ -11,6 +11,15 @@ This tool will get the packages to vendors folder.
 go get github.com/swanwish/godeps
 ```
 
+## Init godeps.json file
+
+It's hard to add depends one by one, the init function can get the external packages from dev environment.
+The function depends on $GOROOT and $GOPATH env.
+
+```
+godeps init
+```
+
 ## Add depends
 
 Add command support two parameters, the path is package path, the godeps tool will create this folder under vendor path.

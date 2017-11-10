@@ -50,7 +50,6 @@ func runInit(c *cli.Context) error {
 		return err
 	}
 	for _, item := range depItems {
-		logs.Debugf("The path is %s and origin is %s", item.Path, item.Origin)
 		err = goDeps.AddItem(item.Path, item.Origin)
 		if err != nil && err != common.ErrAlreadyExist {
 			return err
@@ -67,7 +66,6 @@ func GetSystemPackages() ([]string, error) {
 		return nil, common.ErrInvalidParameter
 	}
 	rootSrc := filepath.Join(envGoRoot, "src")
-	logs.Debugf("The go root src is %s", rootSrc)
 	subFiles, err := ioutil.ReadDir(rootSrc)
 	if err != nil {
 		logs.Errorf("Failed to list go root, the error is %v", err)
@@ -82,14 +80,12 @@ func GetSystemPackages() ([]string, error) {
 }
 
 func GetExternalPackages(wd string, systemPackages []string) ([]string, error) {
-	logs.Debugf("The wd is %s", wd)
 	srcIndex := strings.Index(wd, "src/")
 	if srcIndex == -1 {
 		logs.Errorf("Invalid path, not inside src folder")
 		return nil, common.ErrInvalidParameter
 	}
 	currentPackage := wd[srcIndex+4:]
-	logs.Debugf("Current package is %s", currentPackage)
 	importedPackages := ""
 	importedSystemPackages := []string{}
 	externalPackages := []string{}
@@ -149,7 +145,6 @@ func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 	paths := strings.Split(envGoPath, fmt.Sprintf("%c", os.PathListSeparator))
 	solvedPackages := []string{}
 	for _, externalPackage := range externalPackages {
-		logs.Debugf("The external package is %s", externalPackage)
 		found := false
 		for index := 0; index < len(solvedPackages) && !found; index++ {
 			if strings.HasPrefix(externalPackage, solvedPackages[index]) {
@@ -163,10 +158,8 @@ func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 		for _, goPath := range paths {
 			for solvePackage := externalPackage; solvePackage != "."; solvePackage = path.Dir(solvePackage) {
 				checkGitConfigPath := filepath.Join(goPath, "src", solvePackage, ".git/config")
-				logs.Debugf("The check git path is %s", checkGitConfigPath)
 				if utils.FileExists(checkGitConfigPath) {
 					foundGitPath = true
-					logs.Debugf("Solved package: %s", solvePackage)
 					solvedPackages = append(solvedPackages, solvePackage)
 					origin, err := GetGitOrigin(checkGitConfigPath)
 					if err != nil {

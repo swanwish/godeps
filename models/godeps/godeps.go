@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"fmt"
+
 	"github.com/swanwish/go-common/logs"
 	"github.com/swanwish/go-common/utils"
 	"github.com/swanwish/godeps/common"
@@ -87,6 +89,6 @@ func (goDeps *GoDeps) Save() error {
 		logs.Errorf("Failed to marshal deps, the error is %v", err)
 		return err
 	}
-	logs.Debugf("The json content is %s", string(jsonContent))
+	fmt.Printf("The content of the godeps.json is:\n%s\n", string(jsonContent))
 	return utils.SaveFile(common.DEFAULT_CONFIGURATION_FILE_NAME, jsonContent)
 }
