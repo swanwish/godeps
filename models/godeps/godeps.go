@@ -49,7 +49,7 @@ func (goDeps *GoDeps) AddItem(path, origin string) error {
 		}
 	}
 	goDeps.Deps = append(goDeps.Deps, &DepItem{Path: path, Origin: origin})
-	return goDeps.Save()
+	return nil
 }
 
 func (goDeps *GoDeps) DeleteItem(path string) error {
@@ -67,7 +67,7 @@ func (goDeps *GoDeps) DeleteItem(path string) error {
 	if itemIndex != -1 {
 		goDeps.Deps = append(goDeps.Deps[:itemIndex], goDeps.Deps[itemIndex+1:]...)
 	}
-	return goDeps.Save()
+	return nil
 }
 
 func (goDeps *GoDeps) UpdateItem(path, origin string) error {
@@ -80,7 +80,7 @@ func (goDeps *GoDeps) UpdateItem(path, origin string) error {
 			item.Origin = origin
 		}
 	}
-	return goDeps.Save()
+	return nil
 }
 
 func (goDeps *GoDeps) Save() error {

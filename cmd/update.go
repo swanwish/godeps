@@ -32,5 +32,10 @@ func runUpdate(c *cli.Context) error {
 		logs.Errorf("Failed to create godeps, the error is %v", err)
 		return err
 	}
-	return goDeps.UpdateItem(path, origin)
+
+	if err = goDeps.UpdateItem(path, origin); err != nil {
+		return err
+	}
+
+	return goDeps.Save()
 }

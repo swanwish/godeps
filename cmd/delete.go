@@ -30,6 +30,10 @@ func runDelete(c *cli.Context) error {
 		logs.Errorf("Failed to create godeps, the error is %v", err)
 		return err
 	}
-	err = goDeps.DeleteItem(path)
-	return err
+
+	if err = goDeps.DeleteItem(path); err != nil {
+		return err
+	}
+
+	return goDeps.Save()
 }
