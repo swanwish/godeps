@@ -113,10 +113,10 @@ func GetExternalPackages(wd string, systemPackages []string) ([]string, error) {
 		}
 		for _, importSpec := range f.Imports {
 			pkg := strings.Trim(importSpec.Path.Value, "\"")
-			if strings.Index(importedPackages, pkg) != -1 {
+			if strings.Index(importedPackages, fmt.Sprintf(",%s,", pkg)) != -1 {
 				continue
 			}
-			importedPackages = fmt.Sprintf("%s,%s", importedPackages, pkg)
+			importedPackages = fmt.Sprintf("%s,%s,", importedPackages, pkg)
 			if strings.Index(pkg, "/") == -1 {
 				continue
 			}
