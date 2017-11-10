@@ -175,7 +175,7 @@ func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 			}
 		}
 		if !foundGitPath {
-			logs.Errorf("Failed to find git path for package: %s", externalPackage)
+			logs.Errorf(GetRedMessage(fmt.Sprintf("Failed to find git path for package: %s", externalPackage)))
 		}
 	}
 	return depItems, nil
@@ -198,4 +198,8 @@ func GetGitOrigin(gitConfigPath string) (string, error) {
 		}
 	}
 	return "", common.ErrNotExist
+}
+
+func GetRedMessage(message string) string {
+	return fmt.Sprintf("\x1b[31;1m%s\x1b[0m", message)
 }
