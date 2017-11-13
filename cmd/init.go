@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -24,12 +25,48 @@ var (
 		Usage:       "Init godeps.json file according the external packages for local project",
 		Description: "This command will create a godeps.json file according the external packages for local project",
 		Action:      runInit,
-		Flags:       []cli.Flag{},
+		Flags: []cli.Flag{
+			stringFlag("path, p", "", "The path of predefined custom packages json file"),
+		},
 	}
 )
 
 func runInit(c *cli.Context) error {
-	systemPackages, err := GetSystemPackages()
+	jsonPath := c.String("path")
+	pi := PackageInitializer{}
+	if err := pi.SetPath(jsonPath); err != nil {
+		return err
+	}
+	return pi.doInit()
+}
+
+type PackageInitializer struct {
+	Path           string
+	CustomPackages []godeps.DepItem
+}
+
+func (pi *PackageInitializer) SetPath(path string) error {
+	if path != "" {
+		if !utils.FileExists(path) {
+			logs.Errorf("The custom packages json file %s does not exists", path)
+			return common.ErrNotExist
+		}
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			logs.Errorf("Failed to read content from file %s, the error is %#v", path, err)
+			return err
+		}
+		err = json.Unmarshal(content, &pi.CustomPackages)
+		if err != nil {
+			logs.Errorf("Failed to unmarshal custom packages, the error is %#v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (pi *PackageInitializer) doInit() error {
+	systemPackages, err := pi.GetSystemPackages()
 	if err != nil {
 		logs.Errorf("Failed to get system packages, the error is %v", err)
 		return err
@@ -39,11 +76,11 @@ func runInit(c *cli.Context) error {
 		logs.Errorf("Failed to get wd, the error is %v", err)
 		return err
 	}
-	externalPackages, err := GetExternalPackages(wd, systemPackages)
+	externalPackages, err := pi.GetExternalPackages(wd, systemPackages)
 	if err != nil {
 		logs.Errorf("Failed to get external packages, the error is %v", err)
 	}
-	depItems, err := GetDepItems(externalPackages)
+	depItems, err := pi.GetDepItems(externalPackages)
 	goDeps, err := godeps.NewGoDeps()
 	if err != nil {
 		logs.Errorf("Failed to create godeps, the error is %v", err)
@@ -58,7 +95,7 @@ func runInit(c *cli.Context) error {
 	return goDeps.Save()
 }
 
-func GetSystemPackages() ([]string, error) {
+func (pi *PackageInitializer) GetSystemPackages() ([]string, error) {
 	packages := []string{}
 	envGoRoot := os.Getenv("GOROOT")
 	if envGoRoot == "" {
@@ -79,7 +116,7 @@ func GetSystemPackages() ([]string, error) {
 	return packages, nil
 }
 
-func GetExternalPackages(wd string, systemPackages []string) ([]string, error) {
+func (pi *PackageInitializer) GetExternalPackages(wd string, systemPackages []string) ([]string, error) {
 	srcIndex := strings.Index(wd, "src/")
 	if srcIndex == -1 {
 		logs.Errorf("Invalid path, not inside src folder")
@@ -139,7 +176,7 @@ func GetExternalPackages(wd string, systemPackages []string) ([]string, error) {
 	return externalPackages, nil
 }
 
-func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
+func (pi *PackageInitializer) GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 	depItems := []godeps.DepItem{}
 	envGoPath := os.Getenv("GOPATH")
 	paths := strings.Split(envGoPath, fmt.Sprintf("%c", os.PathListSeparator))
@@ -154,6 +191,17 @@ func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 		if found {
 			continue
 		}
+		customDepItem, err := pi.GetCustomDepItem(externalPackage)
+		if err != nil {
+			if err != common.ErrNotExist {
+				logs.Errorf("Failed to get custom dep item, the error is %#v", err)
+				return depItems, err
+			}
+		} else {
+			depItems = append(depItems, customDepItem)
+			solvedPackages = append(solvedPackages, customDepItem.Path)
+			continue
+		}
 		foundGitPath := false
 		for _, goPath := range paths {
 			for solvePackage := externalPackage; solvePackage != "."; solvePackage = path.Dir(solvePackage) {
@@ -161,7 +209,7 @@ func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 				if utils.FileExists(checkGitConfigPath) {
 					foundGitPath = true
 					solvedPackages = append(solvedPackages, solvePackage)
-					origin, err := GetGitOrigin(checkGitConfigPath)
+					origin, err := pi.GetGitOrigin(checkGitConfigPath)
 					if err != nil {
 						logs.Errorf("Failed to parse origin from path %s, the error is %v", checkGitConfigPath, err)
 						return depItems, err
@@ -181,7 +229,19 @@ func GetDepItems(externalPackages []string) ([]godeps.DepItem, error) {
 	return depItems, nil
 }
 
-func GetGitOrigin(gitConfigPath string) (string, error) {
+func (pi *PackageInitializer) GetCustomDepItem(externalPackage string) (godeps.DepItem, error) {
+	if len(pi.CustomPackages) > 0 {
+		for _, item := range pi.CustomPackages {
+			if strings.HasPrefix(externalPackage, item.Path) {
+				logs.Debugf("Find custom dep item %#v", item)
+				return item, nil
+			}
+		}
+	}
+	return godeps.DepItem{}, common.ErrNotExist
+}
+
+func (pi *PackageInitializer) GetGitOrigin(gitConfigPath string) (string, error) {
 	if !utils.FileExists(gitConfigPath) {
 		return "", common.ErrNotExist
 	}
