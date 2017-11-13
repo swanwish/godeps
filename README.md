@@ -16,9 +16,24 @@ go get github.com/swanwish/godeps
 It's hard to add depends one by one, the init function can get the external packages from dev environment.
 The function depends on $GOROOT and $GOPATH env.
 
-```
-godeps init
-```
+Init function support `packagesetting` parameter, the setting contain ignore packages and custom packages.
+
+The format of the packagesetting json file is like below:
+
+    {
+      "ignorePackages": [
+        {
+          "path": "github.com/urfave/cli",
+          "origin": "https://github.com/urfave/cli"
+        }
+      ],
+      "customPackages": [
+        {
+          "path": "github.com/swanwish/go-common",
+          "origin": "https://github.com/swanwish/go-common"
+        }
+      ]
+    }
 
 ## Add depends
 

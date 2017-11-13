@@ -26,13 +26,13 @@ var (
 		Description: "This command will create a godeps.json file according the external packages for local project",
 		Action:      runInit,
 		Flags: []cli.Flag{
-			stringFlag("path, p", "", "The path of predefined custom packages json file"),
+			stringFlag("packagesetting, ps", "", "The path of package setting json file"),
 		},
 	}
 )
 
 func runInit(c *cli.Context) error {
-	jsonPath := c.String("path")
+	jsonPath := c.String("packagesetting")
 	pi := PackageInitializer{}
 	if err := pi.SetPath(jsonPath); err != nil {
 		return err
@@ -40,9 +40,14 @@ func runInit(c *cli.Context) error {
 	return pi.doInit()
 }
 
+type PackageSetting struct {
+	IgnorePackages []godeps.DepItem `json:"ignorePackages"`
+	CustomPackages []godeps.DepItem `json:"customPackages"`
+}
+
 type PackageInitializer struct {
 	Path           string
-	CustomPackages []godeps.DepItem
+	packageSetting PackageSetting
 }
 
 func (pi *PackageInitializer) SetPath(path string) error {
@@ -56,9 +61,9 @@ func (pi *PackageInitializer) SetPath(path string) error {
 			logs.Errorf("Failed to read content from file %s, the error is %#v", path, err)
 			return err
 		}
-		err = json.Unmarshal(content, &pi.CustomPackages)
+		err = json.Unmarshal(content, &pi.packageSetting)
 		if err != nil {
-			logs.Errorf("Failed to unmarshal custom packages, the error is %#v", err)
+			logs.Errorf("Failed to unmarshal package settings, the error is %#v", err)
 			return err
 		}
 	}
@@ -182,6 +187,10 @@ func (pi *PackageInitializer) GetDepItems(externalPackages []string) ([]godeps.D
 	paths := strings.Split(envGoPath, fmt.Sprintf("%c", os.PathListSeparator))
 	solvedPackages := []string{}
 	for _, externalPackage := range externalPackages {
+		if pi.IsIgnorePackage(externalPackage) {
+			logs.Debugf("The package %s is in ignore list", externalPackage)
+			continue
+		}
 		found := false
 		for index := 0; index < len(solvedPackages) && !found; index++ {
 			if strings.HasPrefix(externalPackage, solvedPackages[index]) {
@@ -229,9 +238,18 @@ func (pi *PackageInitializer) GetDepItems(externalPackages []string) ([]godeps.D
 	return depItems, nil
 }
 
+func (pi *PackageInitializer) IsIgnorePackage(externalPackage string) bool {
+	for _, item := range pi.packageSetting.IgnorePackages {
+		if strings.HasPrefix(externalPackage, item.Path) {
+			return true
+		}
+	}
+	return false
+}
+
 func (pi *PackageInitializer) GetCustomDepItem(externalPackage string) (godeps.DepItem, error) {
-	if len(pi.CustomPackages) > 0 {
-		for _, item := range pi.CustomPackages {
+	if len(pi.packageSetting.CustomPackages) > 0 {
+		for _, item := range pi.packageSetting.CustomPackages {
 			if strings.HasPrefix(externalPackage, item.Path) {
 				logs.Debugf("Find custom dep item %#v", item)
 				return item, nil
